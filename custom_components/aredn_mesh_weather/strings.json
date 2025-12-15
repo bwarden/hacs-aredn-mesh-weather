@@ -1,0 +1,21 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "title": "AREDN Mesh Weather",
+                "description": "Failed to connect to the device. Error: {error_details}",
+                "data": {
+                    "url": "URL"
+                }
+            }
+        },
+        "error": {
+            "cannot_connect": "Connection failed. Please check the logs for details and verify the URL.",
+            "invalid_data": "The device returned invalid data. Is this a Mesh Weather node?",
+            "unknown": "An unknown error occurred."
+        },
+        "abort": {
+            "already_configured": "This weather node is already configured."
+        }
+    }
+}
