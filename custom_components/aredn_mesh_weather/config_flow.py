@@ -13,7 +13,7 @@ from homeassistant.const import CONF_URL
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import DEFAULT_URL, DOMAIN
-from .pylib.parser import InvalidData
+from .parser import InvalidData
 
 _LOGGER = logging.getLogger(__name__)
 

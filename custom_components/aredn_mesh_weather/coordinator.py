@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 
 import aiohttp
 
@@ -13,7 +13,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .pylib.parser import ArednMeshWeatherData
+from .parser import ArednMeshWeatherData, InvalidData
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,13 +44,13 @@ class ArednMeshWeatherCoordinator(DataUpdateCoordinator[ArednMeshWeatherData]):
                 data = await response.json()
                 parsed_data = ArednMeshWeatherData.from_dict(data)
 
-                # Dynamically adjust the update interval
-                now = datetime.now(timezone.utc)
-                next_update = parsed_data.update_time + parsed_data.update_interval
-
-                # Add a small buffer (30s) to avoid fetching too early
-                new_interval = max(next_update - now, timedelta(seconds=60))
-                if self.update_interval != new_interval:
+                # The API provides a recommended update interval.
+                # We'll use that, but ensure it's at least 60 seconds.
+                new_interval = max(parsed_data.update_interval, timedelta(seconds=60))
+                if (
+                    self.update_interval != new_interval
+                    and new_interval.total_seconds() > 0
+                ):
                     self.update_interval = new_interval
                     _LOGGER.info("Adjusting update interval to %s", new_interval)
 
@@ -58,5 +58,5 @@ class ArednMeshWeatherCoordinator(DataUpdateCoordinator[ArednMeshWeatherData]):
 
         except (aiohttp.ClientError, TimeoutError) as err:
             raise UpdateFailed(f"Error communicating with API: {err}") from err
-        except (ValueError, KeyError) as err:
+        except (ValueError, KeyError, InvalidData) as err:
             raise UpdateFailed(f"Invalid data received from API: {err}") from err

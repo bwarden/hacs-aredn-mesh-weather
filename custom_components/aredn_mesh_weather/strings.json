@@ -17,5 +17,18 @@
         "abort": {
             "already_configured": "This weather node is already configured."
         }
+    },
+    "entity": {
+        "sensor": {
+            "aqi": {
+                "name": "AQI"
+            },
+            "pm25": {
+                "name": "PM2.5"
+            },
+            "nws_alerts": {
+                "name": "NWS Weather Alerts"
+            }
+        }
     }
 }

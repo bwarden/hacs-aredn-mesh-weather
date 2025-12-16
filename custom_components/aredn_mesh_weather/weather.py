@@ -3,6 +3,11 @@
 from __future__ import annotations
 
 from homeassistant.components.weather import (
+    ATTR_CONDITION_CLOUDY,
+    ATTR_CONDITION_FOG,
+    ATTR_CONDITION_RAINY,
+    ATTR_CONDITION_SNOWY,
+    ATTR_CONDITION_SUNNY,
     ATTR_FORECAST_CONDITION,
     ATTR_FORECAST_NATIVE_TEMP,
     ATTR_FORECAST_NATIVE_TEMP_LOW,
@@ -11,6 +16,7 @@ from homeassistant.components.weather import (
     ATTR_FORECAST_TIME,
     ATTR_FORECAST_WIND_BEARING,
     Forecast,
+    WeatherEntityFeature,
     WeatherEntity,
 )
 from homeassistant.config_entries import ConfigEntry
@@ -45,6 +51,9 @@ class ArednMeshWeatherEntity(
 
     _attr_has_entity_name = True
     _attr_name = None  # Use device name
+    _attr_supported_features = (
+        WeatherEntityFeature.FORECAST_DAILY | WeatherEntityFeature.FORECAST_HOURLY
+    )
 
     def __init__(
         self, coordinator: ArednMeshWeatherCoordinator, entry: ConfigEntry
@@ -58,6 +67,21 @@ class ArednMeshWeatherEntity(
             manufacturer="AREDN",
             model="Mesh Weather Node",
         )
+
+    @property
+    def apparent_temperature(self) -> float | None:
+        """Return the apparent temperature."""
+        return self.coordinator.data.apparent_temperature
+
+    @property
+    def wind_gust_speed(self) -> float | None:
+        """Return the wind gust speed."""
+        return self.coordinator.data.wind_gust_speed
+
+    @property
+    def cloud_coverage(self) -> float | None:
+        """Return the cloud coverage in %."""
+        return self.coordinator.data.cloud_cover
 
     @property
     def condition(self) -> str | None:
@@ -107,9 +131,8 @@ class ArednMeshWeatherEntity(
         """Return the wind bearing."""
         return self.coordinator.data.wind_bearing
 
-    @property
-    def forecast(self) -> list[Forecast] | None:
-        """Return the forecast."""
+    async def async_forecast_daily(self) -> list[Forecast] | None:
+        """Return the daily forecast."""
         return [
             {
                 ATTR_FORECAST_TIME: f_item["datetime"],
@@ -120,5 +143,19 @@ class ArednMeshWeatherEntity(
                 ATTR_FORECAST_NATIVE_WIND_SPEED: f_item["wind_speed"],
                 ATTR_FORECAST_WIND_BEARING: f_item["wind_bearing"],
             }
-            for f_item in self.coordinator.data.forecast
+            for f_item in self.coordinator.data.forecast_daily
+        ]
+
+    async def async_forecast_hourly(self) -> list[Forecast] | None:
+        """Return the hourly forecast."""
+        return [
+            {
+                ATTR_FORECAST_TIME: f_item["datetime"],
+                ATTR_FORECAST_CONDITION: WMO_TO_HA_CONDITION.get(f_item["condition"]),
+                ATTR_FORECAST_NATIVE_TEMP: f_item["temperature"],
+                ATTR_FORECAST_PRECIPITATION: f_item["precipitation"],
+                ATTR_FORECAST_NATIVE_WIND_SPEED: f_item["wind_speed"],
+                ATTR_FORECAST_WIND_BEARING: f_item["wind_bearing"],
+            }
+            for f_item in self.coordinator.data.forecast_hourly
         ]

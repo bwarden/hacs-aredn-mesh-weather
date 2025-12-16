@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant
 from .const import DOMAIN
 from .coordinator import ArednMeshWeatherCoordinator
 
-PLATFORMS: list[Platform] = [Platform.WEATHER]
+PLATFORMS: list[Platform] = [Platform.WEATHER, Platform.SENSOR]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
