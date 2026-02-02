@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 
-class InvalidData(Exception):
+class InvalidDataError(Exception):
     """Raised when the data is invalid."""
 
 
@@ -48,7 +48,8 @@ class ArednMeshWeatherData:
         """Parse data from the API."""
         try:
             if data.get("status") != "ok" or "weather" not in data:
-                raise InvalidData("Weather data not found or status not ok")
+                msg = "Weather data not found or status not ok"
+                raise InvalidDataError(msg)
 
             weather = data["weather"]
             current = weather["current"]
@@ -116,4 +117,4 @@ class ArednMeshWeatherData:
                 update_interval=timedelta(seconds=current.get("interval", 900)),
             )
         except (KeyError, TypeError, IndexError) as exc:
-            raise InvalidData from exc
+            raise InvalidDataError from exc
