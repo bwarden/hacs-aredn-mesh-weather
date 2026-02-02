@@ -7,15 +7,20 @@ from typing import Any
 
 import aiohttp
 import voluptuous as vol
-
 from homeassistant.config_entries import ConfigFlow
 from homeassistant.const import CONF_URL
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import DEFAULT_URL, DOMAIN
-from .parser import InvalidData
+from .parser import InvalidDataError
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _validate_data(data: dict[str, Any]) -> None:
+    """Validate data."""
+    if data.get("status") != "ok" or "weather" not in data:
+        raise InvalidDataError
 
 
 class ArednMeshWeatherConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -36,8 +41,7 @@ class ArednMeshWeatherConfigFlow(ConfigFlow, domain=DOMAIN):
                 async with session.get(url, timeout=10) as response:
                     response.raise_for_status()
                     data = await response.json()
-                if data.get("status") != "ok" or "weather" not in data:
-                    raise InvalidData
+                _validate_data(data)
 
                 await self.async_set_unique_id(url)
                 self._abort_if_unique_id_configured(updates={CONF_URL: url})
@@ -53,7 +57,7 @@ class ArednMeshWeatherConfigFlow(ConfigFlow, domain=DOMAIN):
                     errors={"base": "cannot_connect"},
                     description_placeholders={"error_details": str(err)},
                 )
-            except InvalidData:
+            except InvalidDataError:
                 return self.async_show_form(
                     step_id="user",
                     data_schema=self.data_schema,

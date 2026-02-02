@@ -4,16 +4,19 @@ from __future__ import annotations
 
 import logging
 from datetime import timedelta
+from http import HTTPStatus
+from typing import TYPE_CHECKING
 
 import aiohttp
-
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_URL
-from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .parser import ArednMeshWeatherData, InvalidData
+from .parser import ArednMeshWeatherData, InvalidDataError
+
+if TYPE_CHECKING:
+    from homeassistant.config_entries import ConfigEntry
+    from homeassistant.core import HomeAssistant
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,7 +29,8 @@ class ArednMeshWeatherCoordinator(DataUpdateCoordinator[ArednMeshWeatherData]):
         self.url = entry.data[CONF_URL]
         self.session = async_get_clientsession(hass)
 
-        # Set a short initial update interval. This will be adjusted after the first successful fetch.
+        # Set a short initial update interval.
+        # This will be adjusted after the first successful fetch.
         super().__init__(
             hass,
             _LOGGER,
@@ -38,8 +42,9 @@ class ArednMeshWeatherCoordinator(DataUpdateCoordinator[ArednMeshWeatherData]):
         """Fetch data from the AREDN Mesh Weather device."""
         try:
             async with self.session.get(self.url, timeout=10) as response:
-                if response.status != 200:
-                    raise UpdateFailed(f"Error fetching data: HTTP {response.status}")
+                if response.status != HTTPStatus.OK:
+                    msg = f"Error fetching data: HTTP {response.status}"
+                    raise UpdateFailed(msg)
 
                 data = await response.json()
                 parsed_data = ArednMeshWeatherData.from_dict(data)
@@ -57,6 +62,8 @@ class ArednMeshWeatherCoordinator(DataUpdateCoordinator[ArednMeshWeatherData]):
                 return parsed_data
 
         except (aiohttp.ClientError, TimeoutError) as err:
-            raise UpdateFailed(f"Error communicating with API: {err}") from err
-        except (ValueError, KeyError, InvalidData) as err:
-            raise UpdateFailed(f"Invalid data received from API: {err}") from err
+            msg = f"Error communicating with API: {err}"
+            raise UpdateFailed(msg) from err
+        except (ValueError, KeyError, InvalidDataError) as err:
+            msg = f"Invalid data received from API: {err}"
+            raise UpdateFailed(msg) from err
