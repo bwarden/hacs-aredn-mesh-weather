@@ -11,7 +11,7 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import CONCENTRATION_MICROGRAMS_PER_CUBIC_METER
+from homeassistant.const import UnitOfDensity
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -48,7 +48,7 @@ SENSOR_TYPES: tuple[ArednMeshWeatherSensorEntityDescription, ...] = (
         key="pm25",
         translation_key="pm25",
         device_class=SensorDeviceClass.PM25,
-        native_unit_of_measurement=CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
+        native_unit_of_measurement=UnitOfDensity.MICROGRAMS_PER_CUBIC_METER,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: data.pm25,
     ),
